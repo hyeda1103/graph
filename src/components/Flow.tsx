@@ -1,10 +1,18 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
-import _ from "lodash";
-import ReactFlow, { addEdge, Panel, useEdgesState, useNodesState, useReactFlow } from "reactflow";
+import ReactFlow, {
+  getConnectedEdges,
+  getIncomers,
+  getOutgoers,
+  Panel,
+  useReactFlow,
+} from "reactflow";
+import { shallow } from "zustand/shallow";
 
+import { nodeHeight, nodeWidth } from "@/constants";
 import initialEdges from "@/edges";
 import initialNodes from "@/nodes";
+import useBoundStore from "@/stores";
 import { FlowWrapper } from "@/styles/components/flow.styles";
 
 import "reactflow/dist/style.css";
@@ -35,10 +43,10 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
       sourcePosition: isHorizontal ? "right" : "bottom",
 
       // Hardcode a width and height for elk to use when layouting.
-      width: 150,
-      height: 50,
+      width: nodeWidth,
+      height: nodeHeight,
     })),
-    edges: edges,
+    edges,
   };
 
   return elk
@@ -59,9 +67,18 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
 function LayoutFlow() {
   const { project } = useReactFlow();
   const flowWrapperRef = useRef(null);
-  const connectingNodeId = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
+    (state) => [
+      state.nodes,
+      state.setNodes,
+      state.onNodesChange,
+      state.edges,
+      state.setEdges,
+      state.onEdgesChange,
+      state.onConnect,
+    ],
+    shallow,
+  );
   const { fitView } = useReactFlow();
 
   const onLayout = useCallback(
@@ -80,41 +97,46 @@ function LayoutFlow() {
     [nodes, edges],
   );
 
-  const onConnectStart = useCallback((_, { nodeId }) => {
-    connectingNodeId.current = nodeId;
-  }, []);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
-  const onConnectEnd = useCallback(
-    (e) => {
-      const targetIsPane = e.target.classList.contains("react-flow__pane");
+  const getNodeId = (nodes) => {
+    if (nodes.length === 0) return 1;
+    const nodeIds = nodes.map((nd) => Number(nd.id));
+    const nextId = Math.max(...nodeIds) + 1;
+    return nextId;
+  };
 
-      if (!targetIsPane) return;
-      if (_.isNil(flowWrapperRef.current)) return;
+  const onAdd = useCallback(() => {
+    const id = getNodeId(nodes);
+    const newNode = {
+      id: `${id}`,
+      data: { label: `node ${id}` },
+      position: project({
+        x: Math.random() * window.innerWidth - 100,
+        y: Math.random() * window.innerHeight,
+      }),
+    };
+    setNodes(nodes.concat(newNode));
+  }, [setNodes, nodes, project]);
 
-      const { top, left } = flowWrapperRef.current.getBoundingClientRect();
-      const nodeIds = nodes.map((nd) => Number(nd.id));
-      const nextId = Math.max(...nodeIds) + 1;
-      const newNode = {
-        id: nextId.toString(),
-        data: {
-          label: `node ${nextId}`,
-        },
-        position: project({ x: e.clientX - left - 75, y: e.clientY - top }),
-      };
+  const onNodesDelete = useCallback(
+    (deleted) => {
+      setEdges(
+        deleted.reduce((acc, node) => {
+          const incomers = getIncomers(node, nodes, edges);
+          const outgoers = getOutgoers(node, nodes, edges);
+          const connectedEdges = getConnectedEdges([node], edges);
 
-      setNodes((nds) => nds.concat(newNode));
-      setEdges((eds) =>
-        eds.concat({
-          id: `e${connectingNodeId.current}${nextId}`,
-          source: `${connectingNodeId.current}`,
-          target: `${nextId}`,
-          type: "smoothstep",
-        }),
+          const remainingEdges = acc.filter((edge) => !connectedEdges.includes(edge));
+
+          const createdEdges = incomers.flatMap(({ id: source }) =>
+            outgoers.map(({ id: target }) => ({ id: `${source}->${target}`, source, target })),
+          );
+
+          return [...remainingEdges, ...createdEdges];
+        }, edges),
       );
     },
-    [project, nodes],
+    [nodes, edges],
   );
-
   // Calculate the initial layout on mount.
   useLayoutEffect(() => {
     onLayout({ direction: "DOWN", useInitialNodes: true });
@@ -126,15 +148,15 @@ function LayoutFlow() {
         nodes={nodes}
         edges={edges}
         onConnect={onConnect}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
         onNodesChange={onNodesChange}
+        onNodesDelete={onNodesDelete}
         onEdgesChange={onEdgesChange}
         fitView
       >
         <Panel position="top-right">
           <button onClick={() => onLayout({ direction: "DOWN" })}>vertical layout</button>
           <button onClick={() => onLayout({ direction: "RIGHT" })}>horizontal layout</button>
+          <button onClick={onAdd}>add node</button>
         </Panel>
       </ReactFlow>
     </FlowWrapper>
