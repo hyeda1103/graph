@@ -1,15 +1,18 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
+import { toPng } from "html-to-image";
 import ReactFlow, {
   getConnectedEdges,
   getIncomers,
   getOutgoers,
+  getRectOfNodes,
+  getTransformForBounds,
   Panel,
   useReactFlow,
 } from "reactflow";
 import { shallow } from "zustand/shallow";
 
-import { nodeHeight, nodeWidth } from "@/constants";
+import { imageHeight, imageWidth, nodeHeight, nodeWidth } from "@/constants";
 import initialEdges from "@/edges";
 import initialNodes from "@/nodes";
 import useBoundStore from "@/stores";
@@ -64,8 +67,16 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
     .catch(console.error);
 };
 
+function downloadImage(dataUrl) {
+  const a = document.createElement("a");
+
+  a.setAttribute("download", "reactflow.png");
+  a.setAttribute("href", dataUrl);
+  a.click();
+}
+
 function LayoutFlow() {
-  const { project } = useReactFlow();
+  const { project, getNodes } = useReactFlow();
   const flowWrapperRef = useRef(null);
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
@@ -117,6 +128,25 @@ function LayoutFlow() {
     setNodes(nodes.concat(newNode));
   }, [setNodes, nodes, project]);
 
+  const onDownload = () => {
+    // we calculate a transform for the nodes so that all nodes are visible
+    // we then overwrite the transform of the `.react-flow__viewport` element
+    // with the style option of the html-to-image library
+    const nodesBounds = getRectOfNodes(getNodes());
+    const transform = getTransformForBounds(nodesBounds, imageWidth, imageHeight, 0.5, 2);
+
+    toPng(document.querySelector(".react-flow__viewport"), {
+      backgroundColor: "#1a365d",
+      width: imageWidth,
+      height: imageHeight,
+      style: {
+        width: imageWidth,
+        height: imageHeight,
+        transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+      },
+    }).then(downloadImage);
+  };
+
   const onNodesDelete = useCallback(
     (deleted) => {
       setEdges(
@@ -157,6 +187,7 @@ function LayoutFlow() {
           <button onClick={() => onLayout({ direction: "DOWN" })}>vertical layout</button>
           <button onClick={() => onLayout({ direction: "RIGHT" })}>horizontal layout</button>
           <button onClick={onAdd}>add node</button>
+          <button onClick={onDownload}>Download Image</button>
         </Panel>
       </ReactFlow>
     </FlowWrapper>
