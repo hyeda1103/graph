@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import { toPng } from "html-to-image";
 import ReactFlow, {
@@ -17,6 +17,7 @@ import initialEdges from "@/edges";
 import initialNodes from "@/nodes";
 import useBoundStore from "@/stores";
 import { FlowWrapper } from "@/styles/components/flow.styles";
+import downloadImage from "@/utils/downloadImage";
 
 import "reactflow/dist/style.css";
 
@@ -31,6 +32,13 @@ const elkOptions = {
   "elk.algorithm": "layered",
   "elk.layered.spacing.nodeNodeBetweenLayers": "100",
   "elk.spacing.nodeNode": "80",
+};
+
+const defaultEdgeOptions = {
+  style: { strokeWidth: 2, stroke: "#9ca8b3" },
+  markerEnd: {
+    type: "arrowclosed",
+  },
 };
 
 const getLayoutedElements = (nodes, edges, options = {}) => {
@@ -67,17 +75,13 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
     .catch(console.error);
 };
 
-function downloadImage(dataUrl) {
-  const a = document.createElement("a");
-
-  a.setAttribute("download", "reactflow.png");
-  a.setAttribute("href", dataUrl);
-  a.click();
-}
-
 function LayoutFlow() {
   const { project, getNodes } = useReactFlow();
+
   const flowWrapperRef = useRef(null);
+  const connectingNodeId = useRef(null);
+
+  const [selectedNode, setSelectedNode] = useState<Node>();
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
       state.nodes,
@@ -111,8 +115,7 @@ function LayoutFlow() {
   const getNodeId = (nodes) => {
     if (nodes.length === 0) return 1;
     const nodeIds = nodes.map((nd) => Number(nd.id));
-    const nextId = Math.max(...nodeIds) + 1;
-    return nextId;
+    return Math.max(...nodeIds) + 1;
   };
 
   const onAdd = useCallback(() => {
@@ -127,6 +130,38 @@ function LayoutFlow() {
     };
     setNodes(nodes.concat(newNode));
   }, [setNodes, nodes, project]);
+
+  const onConnectStart = useCallback((_, params) => {
+    connectingNodeId.current = params.nodeId;
+  }, []);
+
+  const onConnectEnd = useCallback(
+    (event) => {
+      const targetIsPane = event.target.classList.contains("react-flow__pane");
+
+      if (targetIsPane) {
+        // we need to remove the wrapper bounds, in order to get the correct position
+        const { top, left } = flowWrapperRef.current.getBoundingClientRect();
+        const id = getNodeId(nodes);
+        const newNode = {
+          id: `${id}`,
+          // we are removing the half of the node width (75) to center the new node
+          position: project({ x: event.clientX - left - 75, y: event.clientY - top }),
+          data: { label: `node ${id}` },
+        };
+
+        setNodes(nodes.concat(newNode));
+        setEdges(
+          edges.concat({
+            id: `e${connectingNodeId.current}${id}`,
+            source: connectingNodeId.current,
+            target: `${id}`,
+          }),
+        );
+      }
+    },
+    [project, nodes, edges],
+  );
 
   const onDownload = () => {
     // we calculate a transform for the nodes so that all nodes are visible
@@ -169,17 +204,49 @@ function LayoutFlow() {
   );
   // Calculate the initial layout on mount.
   useLayoutEffect(() => {
+    setSelectedNode(undefined);
     onLayout({ direction: "DOWN", useInitialNodes: true });
   }, []);
+
+  const onSelectionChange = useCallback(
+    (params) => {
+      const selectedNodes = params.nodes;
+
+      if (selectedNodes.length !== 1) return;
+
+      setSelectedNode(selectedNodes[0]);
+    },
+    [selectedNode?.id],
+  );
+
+  const handleInputChange = (e) => {
+    if (!selectedNode) return;
+    const nodeToUpdate = nodes.find((nd) => nd.id === selectedNode.id);
+
+    if (!nodeToUpdate) return;
+    const updatedNode = {
+      ...nodeToUpdate,
+      data: {
+        ...nodeToUpdate.data,
+        label: e.target.value,
+      },
+    };
+    setSelectedNode(updatedNode);
+    setNodes([...nodes, updatedNode]);
+  };
 
   return (
     <FlowWrapper ref={flowWrapperRef}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        defaultEdgeOptions={defaultEdgeOptions}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onNodesChange={onNodesChange}
         onNodesDelete={onNodesDelete}
+        onSelectionChange={onSelectionChange}
         onEdgesChange={onEdgesChange}
         fitView
       >
@@ -188,6 +255,10 @@ function LayoutFlow() {
           <button onClick={() => onLayout({ direction: "RIGHT" })}>horizontal layout</button>
           <button onClick={onAdd}>add node</button>
           <button onClick={onDownload}>Download Image</button>
+          <div className="updatenode__controls">
+            <label>label: </label>
+            <input value={selectedNode?.data.label ?? ""} onChange={handleInputChange} />
+          </div>
         </Panel>
       </ReactFlow>
     </FlowWrapper>

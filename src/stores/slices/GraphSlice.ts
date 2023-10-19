@@ -56,7 +56,6 @@ export const createGraphSlice: StateCreator<
     });
   },
   onConnect: (connection: Connection) => {
-    console.log(connection);
     set({
       edges: addEdge(connection, get().edges),
     });
