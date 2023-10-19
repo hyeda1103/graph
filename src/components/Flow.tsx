@@ -12,11 +12,13 @@ import ReactFlow, {
 } from "reactflow";
 import { shallow } from "zustand/shallow";
 
+import CustomNode from "@/components/CustomNode";
 import { imageHeight, imageWidth, nodeHeight, nodeWidth } from "@/constants";
 import initialEdges from "@/edges";
 import initialNodes from "@/nodes";
 import useBoundStore from "@/stores";
-import { FlowWrapper } from "@/styles/components/flow.styles";
+import { FlowWrapper, SelectWrapper } from "@/styles/components/flow.styles";
+import { NodeType } from "@/types";
 import downloadImage from "@/utils/downloadImage";
 
 import "reactflow/dist/style.css";
@@ -39,6 +41,10 @@ const defaultEdgeOptions = {
   markerEnd: {
     type: "arrowclosed",
   },
+};
+
+const nodeTypes = {
+  [NodeType.CONNECTOR]: CustomNode,
 };
 
 const getLayoutedElements = (nodes, edges, options = {}) => {
@@ -76,11 +82,12 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
 };
 
 function LayoutFlow() {
-  const { project, getNodes } = useReactFlow();
+  const { project, getNodes, getEdges } = useReactFlow();
 
   const flowWrapperRef = useRef(null);
   const connectingNodeId = useRef(null);
 
+  const [nextNodeType, setNextNodeType] = useState<NodeType>(NodeType.CONNECTOR);
   const [selectedNode, setSelectedNode] = useState<Node>();
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
@@ -113,23 +120,27 @@ function LayoutFlow() {
   );
 
   const getNodeId = (nodes) => {
-    if (nodes.length === 0) return 1;
-    const nodeIds = nodes.map((nd) => Number(nd.id));
-    return Math.max(...nodeIds) + 1;
+    if (nodes.length === 0) return `${nextNodeType} 1`;
+    const nodeIds = nodes
+      .filter((nd) => nd.type === nextNodeType)
+      .map((nd) => Number(nd.id.split(" ")[1]));
+
+    return `${nextNodeType} ${nodeIds.length ? Math.max(...nodeIds) + 1 : 1}`;
   };
 
   const onAdd = useCallback(() => {
     const id = getNodeId(nodes);
     const newNode = {
       id: `${id}`,
-      data: { label: `node ${id}` },
+      type: nextNodeType,
+      data: { label: `${id}`, type: nextNodeType },
       position: project({
         x: Math.random() * window.innerWidth - 100,
         y: Math.random() * window.innerHeight,
       }),
     };
     setNodes(nodes.concat(newNode));
-  }, [setNodes, nodes, project]);
+  }, [setNodes, nodes, project, nextNodeType]);
 
   const onConnectStart = useCallback((_, params) => {
     connectingNodeId.current = params.nodeId;
@@ -145,9 +156,10 @@ function LayoutFlow() {
         const id = getNodeId(nodes);
         const newNode = {
           id: `${id}`,
+          type: "default",
           // we are removing the half of the node width (75) to center the new node
           position: project({ x: event.clientX - left - 75, y: event.clientY - top }),
-          data: { label: `node ${id}` },
+          data: { label: `${id}` },
         };
 
         setNodes(nodes.concat(newNode));
@@ -171,7 +183,7 @@ function LayoutFlow() {
     const transform = getTransformForBounds(nodesBounds, imageWidth, imageHeight, 0.5, 2);
 
     toPng(document.querySelector(".react-flow__viewport"), {
-      backgroundColor: "#1a365d",
+      backgroundColor: "#ffffff",
       width: imageWidth,
       height: imageHeight,
       style: {
@@ -248,16 +260,44 @@ function LayoutFlow() {
         onNodesDelete={onNodesDelete}
         onSelectionChange={onSelectionChange}
         onEdgesChange={onEdgesChange}
+        onDrag={(e) => console.log(e.target)}
+        nodeTypes={nodeTypes}
         fitView
       >
         <Panel position="top-right">
-          <button onClick={() => onLayout({ direction: "DOWN" })}>vertical layout</button>
-          <button onClick={() => onLayout({ direction: "RIGHT" })}>horizontal layout</button>
-          <button onClick={onAdd}>add node</button>
-          <button onClick={onDownload}>Download Image</button>
-          <div className="updatenode__controls">
-            <label>label: </label>
-            <input value={selectedNode?.data.label ?? ""} onChange={handleInputChange} />
+          <div>
+            <button onClick={() => onLayout({ direction: "DOWN" })}>vertical layout</button>
+            <button onClick={() => onLayout({ direction: "RIGHT" })}>horizontal layout</button>
+          </div>
+          <div>
+            <button onClick={onDownload}>Download Image</button>
+          </div>
+          <div>
+            <div className="updatenode__controls">
+              <label>label: </label>
+              <input value={selectedNode?.data.label ?? ""} onChange={handleInputChange} />
+            </div>
+          </div>
+        </Panel>
+        <Panel position="top-left">
+          <div>
+            <button onClick={onAdd}>add node</button>
+            <SelectWrapper>
+              <label htmlFor="nodeType">Type</label>
+              <select
+                name="nodeType"
+                id="nodeType"
+                defaultValue={NodeType.CONNECTOR}
+                onChange={(e) => {
+                  setNextNodeType(e.target.value as NodeType);
+                }}
+              >
+                <option value={NodeType.INPUT}>INPUT</option>
+                <option value={NodeType.OUTPUT}>OUTPUT</option>
+                <option value={NodeType.DEFAULT}>DEFAULT</option>
+                <option value={NodeType.CONNECTOR}>CONNECTOR</option>
+              </select>
+            </SelectWrapper>
           </div>
         </Panel>
       </ReactFlow>
