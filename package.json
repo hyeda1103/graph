@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "lint:fix": "eslint --fix './**/*.{ts,tsx}'",
-    "format": "prettier --write './**/*.{ts,tsx}' --config ./.prettierrc.json"
+    "lint:fix": "eslint --fix './**/*.{js,ts,tsx,json}'",
+    "format": "prettier --write './**/*.{js,ts,tsx,json}' --config ./.prettierrc.json"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

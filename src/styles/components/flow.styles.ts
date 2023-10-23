@@ -23,6 +23,14 @@ export const FlowWrapper = styled("div")`
     background-color: #000;
     border: 1px solid #fff;
   }
+
+  .react-flow .react-flow__node-input,
+  .react-flow .react-flow__node-output {
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    width: fit-content;
+  }
 `;
 
 export const SelectWrapper = styled("div")``;

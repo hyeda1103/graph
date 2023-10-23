@@ -1,0 +1,231 @@
+{
+  "name": "BasicMNIST",
+  "input": [{ "name": "input_0" }],
+  "output": [{ "name": "output_0" }],
+  "nodes": [
+    {
+      "name": "QuantizeLinear_0",
+      "type": "QuantizeLinear",
+      "attributes": [],
+      "input": ["input_0", "tensor_0", "tensor_1"],
+      "output": ["QuantizeLinear_0_out"]
+    },
+    {
+      "name": "DequantizeLinear_1",
+      "type": "DequantizeLinear",
+      "attributes": [],
+      "input": ["QuantizeLinear_0_out", "tensor_0", "tensor_1"],
+      "output": ["DequantizeLinear_1_out"]
+    },
+    {
+      "name": "QuantizeLinear_2",
+      "type": "QuantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["tensor_2", "tensor_3", "tensor_4"],
+      "output": ["QuantizeLinear_2_out"]
+    },
+    {
+      "name": "DequantizeLinear_3",
+      "type": "DequantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["QuantizeLinear_2_out", "tensor_3", "tensor_4"],
+      "output": ["DequantizeLinear_3_out"]
+    },
+    {
+      "name": "Conv_4",
+      "type": "Conv",
+      "attributes": [
+        { "name": "dilations" },
+        { "name": "group" },
+        { "name": "kernel_shape" },
+        { "name": "pads" },
+        { "name": "strides" }
+      ],
+      "input": ["DequantizeLinear_1_out", "DequantizeLinear_3_out", "tensor_5"],
+      "output": ["Conv_4_out"]
+    },
+    {
+      "name": "Relu_5",
+      "type": "Relu",
+      "attributes": [],
+      "input": ["Conv_4_out"],
+      "output": ["Relu_5_out"]
+    },
+    {
+      "name": "QuantizeLinear_6",
+      "type": "QuantizeLinear",
+      "attributes": [],
+      "input": ["Relu_5_out", "tensor_6", "tensor_1"],
+      "output": ["QuantizeLinear_6_out"]
+    },
+    {
+      "name": "DequantizeLinear_7",
+      "type": "DequantizeLinear",
+      "attributes": [],
+      "input": ["QuantizeLinear_6_out", "tensor_6", "tensor_1"],
+      "output": ["DequantizeLinear_7_out"]
+    },
+    {
+      "name": "QuantizeLinear_8",
+      "type": "QuantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["tensor_7", "tensor_8", "tensor_9"],
+      "output": ["QuantizeLinear_8_out"]
+    },
+    {
+      "name": "DequantizeLinear_9",
+      "type": "DequantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["QuantizeLinear_8_out", "tensor_8", "tensor_9"],
+      "output": ["DequantizeLinear_9_out"]
+    },
+    {
+      "name": "Conv_10",
+      "type": "Conv",
+      "attributes": [
+        { "name": "dilations" },
+        { "name": "group" },
+        { "name": "kernel_shape" },
+        { "name": "pads" },
+        { "name": "strides" }
+      ],
+      "input": ["DequantizeLinear_7_out", "DequantizeLinear_9_out", "tensor_10"],
+      "output": ["Conv_10_out"]
+    },
+    {
+      "name": "Relu_11",
+      "type": "Relu",
+      "attributes": [],
+      "input": ["Conv_10_out"],
+      "output": ["Relu_11_out"]
+    },
+    {
+      "name": "MaxPool_12",
+      "type": "MaxPool",
+      "attributes": [
+        { "name": "ceil_mode" },
+        { "name": "dilations" },
+        { "name": "kernel_shape" },
+        { "name": "pads" },
+        { "name": "strides" }
+      ],
+      "input": ["Relu_11_out"],
+      "output": ["MaxPool_12_out"]
+    },
+    {
+      "name": "QuantizeLinear_13",
+      "type": "QuantizeLinear",
+      "attributes": [],
+      "input": ["MaxPool_12_out", "tensor_11", "tensor_1"],
+      "output": ["QuantizeLinear_13_out"]
+    },
+    {
+      "name": "DequantizeLinear_14",
+      "type": "DequantizeLinear",
+      "attributes": [],
+      "input": ["QuantizeLinear_13_out", "tensor_11", "tensor_1"],
+      "output": ["DequantizeLinear_14_out"]
+    },
+    {
+      "name": "Shape_15",
+      "type": "Shape",
+      "attributes": [],
+      "input": ["DequantizeLinear_14_out"],
+      "output": ["Shape_15_out"]
+    },
+    {
+      "name": "GatherElements_16",
+      "type": "GatherElements",
+      "attributes": [{ "name": "axis" }],
+      "input": ["Shape_15_out", "tensor_12"],
+      "output": ["GatherElements_16_out"]
+    },
+    {
+      "name": "Concat_17",
+      "type": "Concat",
+      "attributes": [{ "name": "axis" }],
+      "input": ["GatherElements_16_out", "tensor_13"],
+      "output": ["Concat_17_out"]
+    },
+    {
+      "name": "Reshape_18",
+      "type": "Reshape",
+      "attributes": [{ "name": "allowzero" }],
+      "input": ["DequantizeLinear_14_out", "Concat_17_out"],
+      "output": ["Reshape_18_out"]
+    },
+    {
+      "name": "QuantizeLinear_19",
+      "type": "QuantizeLinear",
+      "attributes": [],
+      "input": ["Reshape_18_out", "tensor_11", "tensor_1"],
+      "output": ["QuantizeLinear_19_out"]
+    },
+    {
+      "name": "DequantizeLinear_20",
+      "type": "DequantizeLinear",
+      "attributes": [],
+      "input": ["QuantizeLinear_19_out", "tensor_11", "tensor_1"],
+      "output": ["DequantizeLinear_20_out"]
+    },
+    {
+      "name": "QuantizeLinear_21",
+      "type": "QuantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["tensor_14", "tensor_15", "tensor_16"],
+      "output": ["QuantizeLinear_21_out"]
+    },
+    {
+      "name": "DequantizeLinear_22",
+      "type": "DequantizeLinear",
+      "attributes": [{ "name": "axis" }],
+      "input": ["QuantizeLinear_21_out", "tensor_15", "tensor_16"],
+      "output": ["DequantizeLinear_22_out"]
+    },
+    {
+      "name": "Gemm_23",
+      "type": "Gemm",
+      "attributes": [
+        { "name": "alpha" },
+        { "name": "beta" },
+        { "name": "transA" },
+        { "name": "transB" }
+      ],
+      "input": ["DequantizeLinear_20_out", "DequantizeLinear_22_out", "tensor_17"],
+      "output": ["Gemm_23_out"]
+    },
+    {
+      "name": "Relu_24",
+      "type": "Relu",
+      "attributes": [],
+      "input": ["Gemm_23_out"],
+      "output": ["Relu_24_out"]
+    },
+    {
+      "name": "QuantizeLinear_25",
+      "type": "QuantizeLinear",
+      "attributes": [],
+      "input": ["Relu_24_out", "tensor_18", "tensor_1"],
+      "output": ["QuantizeLinear_25_out"]
+    },
+    {
+      "name": "DequantizeLinear_26",
+      "type": "DequantizeLinear",
+      "attributes": [],
+      "input": ["QuantizeLinear_25_out", "tensor_18", "tensor_1"],
+      "output": ["DequantizeLinear_26_out"]
+    },
+    {
+      "name": "Gemm_27",
+      "type": "Gemm",
+      "attributes": [
+        { "name": "alpha" },
+        { "name": "beta" },
+        { "name": "transA" },
+        { "name": "transB" }
+      ],
+      "input": ["DequantizeLinear_26_out", "tensor_19", "tensor_20"],
+      "output": ["output_0"]
+    }
+  ]
+}
