@@ -89,3 +89,8 @@ export interface ModelProto {
   producerName: string;
   trainingInfo: any[];
 }
+
+export enum Layout {
+  VERTICAL = "Vertical",
+  HORIZONTAL = "Horizontal",
+}

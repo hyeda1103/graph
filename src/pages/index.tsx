@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import ReactFlow, { MarkerType, Panel, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
@@ -16,10 +16,25 @@ import ReluNode from "@/components/Nodes/Relu";
 import ReshapeNode from "@/components/Nodes/Reshape";
 import ShapeNode from "@/components/Nodes/Shape";
 import useBoundStore from "@/stores";
-import { FlowWrapper, SelectWrapper } from "@/styles/components/flow.styles";
-import { NodeType } from "@/types";
+import {
+  BasicButton,
+  FlowWrapper,
+  Inner,
+  LayoutOptionWrapper,
+  SelectWrapper,
+} from "@/styles/components/flow.styles";
+import { Layout, ModelProto, NodeType } from "@/types";
+import getLayoutedElements from "@/utils/getELKlayoutedElements";
+import parseEdges from "@/utils/parseEdges";
+import parseNodes from "@/utils/parseNodes";
 
 import "reactflow/dist/style.css";
+
+const elkOptions = {
+  "elk.algorithm": "layered",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+  "elk.spacing.nodeNode": "80",
+};
 
 const defaultEdgeOptions = {
   style: { strokeWidth: 1, stroke: "#000" },
@@ -45,18 +60,21 @@ const nodeTypes = {
 };
 
 export default function ReadGraph() {
-  const [nodes, setNodes, onNodesChange, edges, onEdgesChange, onConnect] = useBoundStore(
+  const [modelData, setModelData] = useState<ModelProto>();
+
+  const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
       state.nodes,
       state.setNodes,
       state.onNodesChange,
       state.edges,
+      state.setEdges,
       state.onEdgesChange,
       state.onConnect,
     ],
     shallow,
   );
-  const { project } = useReactFlow();
+  const { project, fitView } = useReactFlow();
 
   const flowWrapperRef = useRef(null);
 
@@ -94,10 +112,33 @@ export default function ReadGraph() {
     };
     setNodes(nodes.concat(newNode));
   }, [setNodes, nodes, project, nextNodeType]);
+  const onLayout = useCallback(
+    ({ direction, useInitialNodes = false }) => {
+      const opts = { "elk.direction": direction, ...elkOptions };
 
+      const initialEdges = modelData ? parseEdges(modelData.graph) : [];
+      const initialNodes = modelData ? parseNodes(modelData.graph) : [];
+
+      const ns = useInitialNodes ? initialNodes : nodes;
+      const es = useInitialNodes ? initialEdges : edges;
+
+      getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+
+        window.requestAnimationFrame(() => fitView());
+      });
+    },
+    [nodes, edges, modelData],
+  );
+
+  // Calculate the initial layout on mount.
+  useLayoutEffect(() => {
+    onLayout({ direction: "DOWN", useInitialNodes: true });
+  }, [modelData]);
   return (
     <>
-      <FileDropZone />
+      <FileDropZone setModelData={setModelData} />
       <FlowWrapper ref={flowWrapperRef}>
         <ReactFlow
           nodes={nodes}
@@ -110,8 +151,16 @@ export default function ReadGraph() {
           fitView
         >
           <Panel position="top-right">
-            <div>
-              <button onClick={onAdd}>add node</button>
+            <Inner>
+              <LayoutOptionWrapper>
+                Graph Layout
+                <BasicButton type="button" onClick={() => onLayout({ direction: "DOWN" })}>
+                  {Layout.VERTICAL}
+                </BasicButton>
+                <BasicButton type="button" onClick={() => onLayout({ direction: "RIGHT" })}>
+                  {Layout.HORIZONTAL}
+                </BasicButton>
+              </LayoutOptionWrapper>
               <SelectWrapper>
                 <label htmlFor="nodeType">Node Type</label>
                 <select
@@ -135,8 +184,9 @@ export default function ReadGraph() {
                   <option value={NodeType.GEMM}>{NodeType.GEMM}</option>
                   <option value={NodeType.CONCAT}>{NodeType.CONCAT}</option>
                 </select>
+                <BasicButton onClick={onAdd}>Add node</BasicButton>
               </SelectWrapper>
-            </div>
+            </Inner>
           </Panel>
         </ReactFlow>
       </FlowWrapper>
