@@ -22,19 +22,38 @@ export interface Edge {
 }
 
 export interface Node {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   type?: string;
   attributes?: {
-    name: string;
-  }[];
-  data: {
+    name?: string;
+  };
+  data?: {
     label: string;
   };
   input?: Node["name"][];
   output?: Node["name"][];
-  position: {
+  position?: {
     x: number;
     y: number;
   };
+}
+
+export interface JSONdata {
+  name: string;
+  input: {
+    name: string;
+  }[];
+  output: {
+    name: string;
+  }[];
+  nodes: {
+    name: string;
+    type: string;
+    attributes: {
+      name?: string;
+    };
+    input: string[];
+    output: string[];
+  }[];
 }

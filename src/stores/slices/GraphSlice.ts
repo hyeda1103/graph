@@ -11,11 +11,8 @@ import {
 } from "reactflow";
 import { StateCreator } from "zustand";
 
-import GraphData from "@/data/basic_mnist.json";
 import { RootState } from "@/stores";
 import * as I from "@/types";
-import parseEdges from "@/utils/parseEdges";
-import parseNodes from "@/utils/parseNodes";
 
 export interface GraphSlice {
   nodes: I.Node[];
@@ -26,18 +23,14 @@ export interface GraphSlice {
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
 }
-
-const initialEdges = parseEdges(GraphData.nodes, GraphData.input[0], GraphData.output[0]);
-const initialNodes = parseNodes(GraphData.nodes, GraphData.input[0], GraphData.output[0]);
-
 export const createGraphSlice: StateCreator<
   RootState,
   [["zustand/persist", unknown], ["zustand/devtools", never]],
   [],
   GraphSlice
 > = (set, get) => ({
-  nodes: initialNodes,
-  edges: initialEdges,
+  nodes: [],
+  edges: [],
   setNodes: (nodes: I.Node[]) => {
     set({
       nodes,
