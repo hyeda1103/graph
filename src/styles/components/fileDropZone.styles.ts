@@ -1,18 +1,30 @@
 import styled from "@emotion/styled";
 
 export const Inner = styled("div")`
-  position: fixed;
-  left: 5px;
-  top: 5px;
-  width: 200px;
-  aspect-ratio: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  border-radius: 4px;
   border: 1px solid #000;
-  border-radius: 8px;
-  background-color: #eee;
-  z-index: 99;
   cursor: pointer;
+  padding: 0.1em;
+`;
+
+export const Dashed = styled("div")`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  border: 1px dashed #000;
+  cursor: pointer;
+  font-size: 13.5px;
+  white-space: pre-wrap;
+
+  :hover {
+    background-color: #eee;
+  }
 `;

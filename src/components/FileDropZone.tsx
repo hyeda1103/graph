@@ -1,8 +1,8 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { load } from "protobufjs";
 import Dropzone from "react-dropzone";
 
-import { Inner } from "@/styles/components/fileDropZone.styles";
+import { Dashed, Inner } from "@/styles/components/fileDropZone.styles";
 import { ModelProto } from "@/types";
 
 interface Props {
@@ -10,8 +10,10 @@ interface Props {
 }
 
 function FileDropZone({ setModelData }: Props) {
+  const [fileName, setFileName] = useState("");
   const onDrop = ([file]) => {
     const reader = new FileReader();
+    setFileName(file.name);
     reader.onload = (e) => {
       // Cast the file body to uint8 array
       if (e.target === undefined) return;
@@ -38,8 +40,10 @@ function FileDropZone({ setModelData }: Props) {
     <Dropzone onDrop={onDrop}>
       {({ getRootProps, getInputProps }) => (
         <Inner {...getRootProps()}>
-          <input {...getInputProps()} />
-          Click me to upload a file!
+          <Dashed>
+            <input {...getInputProps()} />
+            {`Uploaded: \n${fileName}` || "Click to upload a file"}
+          </Dashed>
         </Inner>
       )}
     </Dropzone>

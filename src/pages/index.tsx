@@ -22,6 +22,7 @@ import {
   Inner,
   LayoutOptionWrapper,
   SelectWrapper,
+  Title,
 } from "@/styles/components/flow.styles";
 import { Layout, ModelProto, NodeType } from "@/types";
 import getLayoutedElements from "@/utils/getELKlayoutedElements";
@@ -138,7 +139,6 @@ export default function ReadGraph() {
   }, [modelData]);
   return (
     <>
-      <FileDropZone setModelData={setModelData} />
       <FlowWrapper ref={flowWrapperRef}>
         <ReactFlow
           nodes={nodes}
@@ -152,8 +152,9 @@ export default function ReadGraph() {
         >
           <Panel position="top-right">
             <Inner>
+              <FileDropZone setModelData={setModelData} />
               <LayoutOptionWrapper>
-                Graph Layout
+                <Title>Graph Layout</Title>
                 <BasicButton type="button" onClick={() => onLayout({ direction: "DOWN" })}>
                   {Layout.VERTICAL}
                 </BasicButton>
@@ -162,7 +163,9 @@ export default function ReadGraph() {
                 </BasicButton>
               </LayoutOptionWrapper>
               <SelectWrapper>
-                <label htmlFor="nodeType">Node Type</label>
+                <label htmlFor="nodeType">
+                  <Title>Node Type</Title>
+                </label>
                 <select
                   name="nodeType"
                   id="nodeType"

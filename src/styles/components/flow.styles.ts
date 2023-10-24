@@ -33,6 +33,11 @@ export const FlowWrapper = styled("div")`
   }
 `;
 
+export const Title = styled("p")`
+  font-size: 15px;
+  margin: 0;
+`;
+
 export const SelectWrapper = styled("div")`
   display: grid;
   grid-template-rows: repeat(2, 1fr);
