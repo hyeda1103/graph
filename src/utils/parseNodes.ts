@@ -1,9 +1,13 @@
-import * as I from "@/types";
-function parseNodes(nodes: I.Node[], input: I.Node, output: I.Node) {
+import { GraphProto } from "@/types";
+function parseNodes(graph: GraphProto) {
+  const nodes = graph.node;
+  const input = graph.input;
+  const output = graph.output;
+
   const defaultNodes = nodes.map((node) => ({
     id: node.name,
     name: node.name,
-    type: node.type,
+    type: node.opType,
     data: {
       label: node.name,
     },
@@ -12,31 +16,33 @@ function parseNodes(nodes: I.Node[], input: I.Node, output: I.Node) {
       y: 0,
     },
   }));
-  const inputNode = {
-    id: input.name,
-    name: input.name,
+
+  const inputNodes = input.map((i) => ({
+    id: i.name,
+    name: i.name,
     type: "input",
     data: {
-      label: input.name,
+      label: i.name,
     },
     position: {
       x: 0,
       y: 0,
     },
-  };
-  const outputNode = {
-    id: output.name,
-    name: output.name,
+  }));
+
+  const outputNodes = output.map((o) => ({
+    id: o.name,
+    name: o.name,
     type: "output",
     data: {
-      label: output.name,
+      label: o.name,
     },
     position: {
       x: 0,
       y: 0,
     },
-  };
-  return [...defaultNodes, inputNode, outputNode];
+  }));
+  return [...defaultNodes, ...inputNodes, ...outputNodes];
 }
 
 export default parseNodes;

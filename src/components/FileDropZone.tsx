@@ -1,5 +1,8 @@
+"use client";
+
 import { useCallback, useLayoutEffect, useState } from "react";
 import ELK from "elkjs/lib/elk.bundled";
+import { load } from "protobufjs";
 import Dropzone from "react-dropzone";
 import { useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
@@ -7,7 +10,7 @@ import { shallow } from "zustand/shallow";
 import { nodeHeight, nodeWidth } from "@/constants";
 import useBoundStore from "@/stores";
 import { Inner } from "@/styles/components/fileDropZone.styles";
-import { JSONdata } from "@/types";
+import { ModelProto } from "@/types";
 import parseEdges from "@/utils/parseEdges";
 import parseNodes from "@/utils/parseNodes";
 
@@ -54,7 +57,7 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
 };
 
 function FileDropZone() {
-  const [jsonData, setJsonData] = useState<JSONdata>();
+  const [modelData, setModelData] = useState<ModelProto>();
   const { fitView } = useReactFlow();
   const [nodes, setNodes, edges, setEdges] = useBoundStore(
     (state) => [state.nodes, state.setNodes, state.edges, state.setEdges],
@@ -63,24 +66,32 @@ function FileDropZone() {
 
   const onDrop = ([file]) => {
     const reader = new FileReader();
-    reader.onload = function (e) {
-      const contents = e.target?.result;
-      if (!contents) return;
-      setJsonData(JSON.parse(contents as string));
+    reader.onload = (e) => {
+      // Cast the file body to uint8 array
+      const uint8Buffer = new Uint8Array(e.target?.result);
+
+      // Load the onnx protobuf3 schema file
+      load("./_next/static/chunks/onnx.proto3")
+        .then((res) => {
+          // Lookup the ModelProto class from the schema
+          const model = res.lookupType("onnx.ModelProto");
+          // Decode the uint8 array from the file to become an object
+          const decodedModel = model.decode(uint8Buffer);
+          setModelData(decodedModel as ModelProto);
+        })
+        .catch((err) => {
+          console.log("ERROR:", err);
+        });
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const onLayout = useCallback(
     ({ direction, useInitialNodes = false }) => {
       const opts = { "elk.direction": direction, ...elkOptions };
 
-      const initialEdges = jsonData
-        ? parseEdges(jsonData.nodes, jsonData.input[0], jsonData.output[0])
-        : [];
-      const initialNodes = jsonData
-        ? parseNodes(jsonData.nodes, jsonData.input[0], jsonData.output[0])
-        : [];
+      const initialEdges = modelData ? parseEdges(modelData.graph) : [];
+      const initialNodes = modelData ? parseNodes(modelData.graph) : [];
 
       const ns = useInitialNodes ? initialNodes : nodes;
       const es = useInitialNodes ? initialEdges : edges;
@@ -92,14 +103,13 @@ function FileDropZone() {
         window.requestAnimationFrame(() => fitView());
       });
     },
-    [nodes, edges, jsonData],
+    [nodes, edges, modelData],
   );
 
   // Calculate the initial layout on mount.
   useLayoutEffect(() => {
-    console.log(jsonData);
     onLayout({ direction: "DOWN", useInitialNodes: true });
-  }, [jsonData]);
+  }, [modelData]);
 
   return (
     <Dropzone onDrop={onDrop}>

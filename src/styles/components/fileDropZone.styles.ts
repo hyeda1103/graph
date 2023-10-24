@@ -7,6 +7,7 @@ export const Inner = styled("div")`
   width: 200px;
   aspect-ratio: 2;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   border: 1px solid #000;

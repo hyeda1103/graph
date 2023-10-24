@@ -1,6 +1,10 @@
 import * as I from "@/types";
 
-function parseEdges(nodes: I.Node[], input: I.Node, output: I.Node) {
+function parseEdges(graph: I.ModelProto["graph"]) {
+  const nodes = graph.node;
+  const input = graph.input;
+  const output = graph.output;
+
   const edges = nodes.reduce((acc, cur) => {
     if (cur.input) {
       const newEdges = Array.from({
@@ -27,22 +31,26 @@ function parseEdges(nodes: I.Node[], input: I.Node, output: I.Node) {
     return acc;
   }, [] as I.Edge[]);
 
-  const inputTargetNode = nodes.find((node) => node.input?.includes(input.name));
+  const inputEdges = input.map((i) => {
+    const inputTargetNode = nodes.find((node) => node.input?.includes(i.name));
 
-  const inputEdge = {
-    id: input.name,
-    source: input.name,
-    target: inputTargetNode?.name || "",
-  };
+    return {
+      id: i.name,
+      source: i.name,
+      target: inputTargetNode?.name || "",
+    };
+  });
 
-  const outputSourceNode = nodes.find((node) => node.output?.includes(output.name));
+  const outputEdges = output.map((o) => {
+    const outputSourceNode = nodes.find((node) => node.output?.includes(o.name));
 
-  const outputEdge = {
-    id: output.name,
-    source: outputSourceNode?.name || "",
-    target: output.name,
-  };
-  return [inputEdge, ...middleEdges, outputEdge];
+    return {
+      id: o.name,
+      source: outputSourceNode?.name || "",
+      target: o.name,
+    };
+  });
+  return [...inputEdges, ...middleEdges, ...outputEdges];
 }
 
 export default parseEdges;

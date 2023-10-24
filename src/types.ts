@@ -39,21 +39,53 @@ export interface Node {
   };
 }
 
-export interface JSONdata {
+export interface ValueInfoProto {
   name: string;
-  input: {
-    name: string;
-  }[];
-  output: {
-    name: string;
-  }[];
-  nodes: {
-    name: string;
-    type: string;
-    attributes: {
-      name?: string;
-    };
-    input: string[];
-    output: string[];
-  }[];
+  type: {
+    tensorType: string;
+  };
+}
+
+export interface AttributeProto {
+  floats: any[];
+  graphs: any[];
+  i: number;
+  ints: any[];
+  name: string;
+  sparseTensors: any[];
+  strings: string[];
+  tensors: any[];
+  type: number;
+  typeProtos: any[];
+}
+
+export interface NodeProto {
+  attribute: AttributeProto[];
+  input: string[];
+  name: string;
+  opType: string;
+  output: string[];
+}
+
+export interface OperatorSetIdProto {
+  domain: string;
+  version: number;
+}
+
+export interface GraphProto {
+  docString: string;
+  initializer: string[];
+  input: ValueInfoProto[];
+  node: NodeProto[];
+  output: ValueInfoProto[];
+}
+
+export interface ModelProto {
+  functions?: any[];
+  graph: GraphProto;
+  irVersion: number;
+  metadataProps: any[];
+  opsetImport: OperatorSetIdProto[];
+  producerName: string;
+  trainingInfo: any[];
 }
