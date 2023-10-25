@@ -18,9 +18,13 @@ import ShapeNode from "@/components/Nodes/Shape";
 import useBoundStore from "@/stores";
 import {
   BasicButton,
+  ButtonWrapper,
   FlowWrapper,
+  IconBox,
   Inner,
   LayoutOptionWrapper,
+  RestoreIcon,
+  SaveIcon,
   SelectWrapper,
   Title,
 } from "@/styles/components/flow.styles";
@@ -61,6 +65,7 @@ const nodeTypes = {
 };
 
 export default function ReadGraph() {
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance>(null);
   const [modelData, setModelData] = useState<ModelProto>();
 
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
@@ -75,11 +80,33 @@ export default function ReadGraph() {
     ],
     shallow,
   );
-  const { project, fitView } = useReactFlow();
+  const { project, fitView, setViewport } = useReactFlow();
 
   const flowWrapperRef = useRef(null);
 
   const [nextNodeType, setNextNodeType] = useState<NodeType>(NodeType.QUANTIZE_LINEAR);
+
+  const onSave = useCallback(() => {
+    if (rfInstance) {
+      const flow = rfInstance.toObject();
+      localStorage.setItem("flowKey", JSON.stringify(flow));
+    }
+  }, [rfInstance]);
+
+  const onRestore = useCallback(() => {
+    const restoreFlow = async () => {
+      const flow = JSON.parse(localStorage.getItem("flowKey"));
+
+      if (flow) {
+        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+        setNodes(flow.nodes || []);
+        setEdges(flow.edges || []);
+        setViewport({ x, y, zoom });
+      }
+    };
+
+    restoreFlow();
+  }, [setNodes, setViewport]);
 
   const getId = (nodes) => {
     if (nodes.length === 0) {
@@ -148,10 +175,22 @@ export default function ReadGraph() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onInit={setRfInstance}
           fitView
         >
           <Panel position="top-right">
             <Inner>
+              <LayoutOptionWrapper>
+                <Title>Save and Restore</Title>
+                <ButtonWrapper>
+                  <IconBox>
+                    <SaveIcon onClick={onSave} />
+                  </IconBox>
+                  <IconBox>
+                    <RestoreIcon onClick={onRestore} />
+                  </IconBox>
+                </ButtonWrapper>
+              </LayoutOptionWrapper>
               <FileDropZone setModelData={setModelData} />
               <LayoutOptionWrapper>
                 <Title>Graph Layout</Title>

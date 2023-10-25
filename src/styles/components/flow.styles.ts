@@ -1,4 +1,6 @@
+import { css } from "@emotion/react";
 import styled from "@emotion/styled";
+import { MdRestore, MdSave } from "react-icons/md";
 
 export const FlowWrapper = styled("div")`
   width: 100vw;
@@ -46,6 +48,40 @@ export const SelectWrapper = styled("div")`
   background-color: #eee;
   padding: 0.75em 1em;
   border-radius: 4px;
+`;
+
+export const IconBox = styled("div")`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: #eee;
+  border: 1px solid #000;
+  border-radius: 4px;
+
+  :hover {
+    background-color: #fff;
+  }
+`;
+
+const Icon = css`
+  color: #000;
+  cursor: pointer;
+`;
+
+export const SaveIcon = styled(MdSave)`
+  ${Icon}
+`;
+
+export const RestoreIcon = styled(MdRestore)`
+  ${Icon}
+`;
+
+export const ButtonWrapper = styled("div")`
+  display: flex;
+  gap: 0.5em;
 `;
 
 export const LayoutOptionWrapper = styled("div")`
