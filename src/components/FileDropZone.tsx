@@ -42,7 +42,7 @@ function FileDropZone({ setModelData }: Props) {
         <Inner {...getRootProps()}>
           <Dashed>
             <input {...getInputProps()} />
-            {`Uploaded: \n${fileName}` || "Click to upload a file"}
+            {fileName ? `Uploaded: \n${fileName}` : "Click to upload a file"}
           </Dashed>
         </Inner>
       )}
