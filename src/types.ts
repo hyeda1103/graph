@@ -94,3 +94,8 @@ export enum Layout {
   VERTICAL = "Vertical",
   HORIZONTAL = "Horizontal",
 }
+
+export enum AcceptedFileExt {
+  TFLITE = ".tflite",
+  ONNX = ".onnx",
+}
