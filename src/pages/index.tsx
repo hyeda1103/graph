@@ -1,5 +1,13 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import ReactFlow, { MarkerType, Panel, useReactFlow } from "reactflow";
+import {
+  MemoExoticComponent,
+  ReactNode,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import ReactFlow, { MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
 import FileDropZone from "@/components/FileDropZone";
@@ -28,12 +36,14 @@ import {
   SelectWrapper,
   Title,
 } from "@/styles/components/flow.styles";
-import { Layout, ModelProto, NodeType } from "@/types";
+import { AcceptedFileExt, Layout, ModelProto, NodeType } from "@/types";
 import getLayoutedElements from "@/utils/getELKlayoutedElements";
 import parseEdges from "@/utils/parseEdges";
 import parseNodes from "@/utils/parseNodes";
 
 import "reactflow/dist/style.css";
+import Node from "@/components/Nodes";
+import DefaultNode from "@/components/Nodes/Default";
 
 const elkOptions = {
   "elk.algorithm": "layered",
@@ -50,6 +60,7 @@ const defaultEdgeOptions = {
 };
 
 const nodeTypes = {
+  [NodeType.DEFAULT]: DefaultNode,
   [NodeType.INPUT]: InputNode,
   [NodeType.OUTPUT]: OutputNode,
   [NodeType.QUANTIZE_LINEAR]: QuantizeLinearNode,
@@ -66,7 +77,14 @@ const nodeTypes = {
 
 export default function ReadGraph() {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance>(null);
-  const [modelData, setModelData] = useState<ModelProto>();
+
+  const [modelType, setModelType] = useState<AcceptedFileExt>();
+  const [modelData, setModelData] = useState<{
+    graph: {
+      node: any[];
+      edge: any[];
+    };
+  }>();
 
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
@@ -80,6 +98,7 @@ export default function ReadGraph() {
     ],
     shallow,
   );
+
   const { project, fitView, setViewport } = useReactFlow();
 
   const flowWrapperRef = useRef(null);
@@ -95,7 +114,7 @@ export default function ReadGraph() {
 
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
-      const flow = JSON.parse(localStorage.getItem("flowKey"));
+      const flow = JSON.parse(`${localStorage.getItem("flowKey")}`);
 
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
@@ -140,12 +159,14 @@ export default function ReadGraph() {
     };
     setNodes(nodes.concat(newNode));
   }, [setNodes, nodes, project, nextNodeType]);
+
   const onLayout = useCallback(
     ({ direction, useInitialNodes = false }) => {
       const opts = { "elk.direction": direction, ...elkOptions };
 
-      const initialEdges = modelData ? parseEdges(modelData.graph) : [];
-      const initialNodes = modelData ? parseNodes(modelData.graph) : [];
+      console.log(modelData);
+      const initialEdges = modelData ? modelData.graph.edge : [];
+      const initialNodes = modelData ? modelData.graph.node : [];
 
       const ns = useInitialNodes ? initialNodes : nodes;
       const es = useInitialNodes ? initialEdges : edges;
@@ -163,7 +184,7 @@ export default function ReadGraph() {
   // Calculate the initial layout on mount.
   useLayoutEffect(() => {
     onLayout({ direction: "DOWN", useInitialNodes: true });
-  }, [modelData]);
+  }, [modelData, modelType]);
   return (
     <>
       <FlowWrapper ref={flowWrapperRef}>
@@ -176,6 +197,9 @@ export default function ReadGraph() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onInit={setRfInstance}
+          onSelect={(e) => {
+            console.log(`onSelect`, e);
+          }}
           fitView
         >
           <Panel position="top-right">
@@ -191,7 +215,7 @@ export default function ReadGraph() {
                   </IconBox>
                 </ButtonWrapper>
               </LayoutOptionWrapper>
-              <FileDropZone setModelData={setModelData} />
+              <FileDropZone setModelType={setModelType} setModelData={setModelData} />
               <LayoutOptionWrapper>
                 <Title>Graph Layout</Title>
                 <BasicButton type="button" onClick={() => onLayout({ direction: "DOWN" })}>

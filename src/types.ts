@@ -73,8 +73,8 @@ export interface OperatorSetIdProto {
 }
 
 export interface GraphProto {
-  docString: string;
-  initializer: string[];
+  docString?: string;
+  initializer?: string[];
   input: ValueInfoProto[];
   node: NodeProto[];
   output: ValueInfoProto[];
@@ -83,11 +83,11 @@ export interface GraphProto {
 export interface ModelProto {
   functions?: any[];
   graph: GraphProto;
-  irVersion: number;
-  metadataProps: any[];
-  opsetImport: OperatorSetIdProto[];
-  producerName: string;
-  trainingInfo: any[];
+  irVersion?: number;
+  metadataProps?: any[];
+  opsetImport?: OperatorSetIdProto[];
+  producerName?: string;
+  trainingInfo?: any[];
 }
 
 export enum Layout {

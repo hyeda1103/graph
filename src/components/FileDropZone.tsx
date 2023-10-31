@@ -1,17 +1,21 @@
 import { Dispatch, SetStateAction, useState } from "react";
+import * as flatbuffers from "flatbuffers";
+import _ from "lodash";
 import { load, Message } from "protobufjs";
 import Dropzone, { DropEvent, FileRejection } from "react-dropzone";
 
 import { Dashed, Inner } from "@/styles/components/fileDropZone.styles";
-import { AcceptedFileExt, ModelProto } from "@/types";
-import * as flatbuffers from "flatbuffers";
+import { AcceptedFileExt, ModelProto, NodeProto, ValueInfoProto } from "@/types";
 import { BuiltinOperator, Model } from "@/utils/tflite/tflite";
+import parseEdges from "@/utils/parseEdges";
+import parseNodes from "@/utils/parseNodes";
 
 interface Props {
+  setModelType: Dispatch<SetStateAction<AcceptedFileExt | undefined>>;
   setModelData: Dispatch<SetStateAction<ModelProto | Message<object> | undefined>>;
 }
 
-function FileDropZone({ setModelData }: Props) {
+function FileDropZone({ setModelType, setModelData }: Props) {
   const [fileName, setFileName] = useState("");
   const onDrop:
     | (<T extends File>(
@@ -46,10 +50,20 @@ function FileDropZone({ setModelData }: Props) {
                 const model = res.lookupType("onnx.ModelProto");
                 // Decode the uint8 array from the file to become an object
                 const decodedModel = model.decode(uint8Buffer);
-                setModelData(decodedModel);
+
+                const parsedNodes = parseNodes(decodedModel.graph);
+                const parsedEdges = parseEdges(decodedModel.graph);
+                console.log(parsedEdges);
+                setModelType(AcceptedFileExt.ONNX);
+                setModelData({
+                  graph: {
+                    node: parsedNodes,
+                    edge: parsedEdges,
+                  },
+                });
               })
               .catch((err) => {
-                console.log("ERROR:", err);
+                console.error("ERROR:", err);
               });
           };
           reader.readAsArrayBuffer(file);
@@ -68,90 +82,245 @@ function FileDropZone({ setModelData }: Props) {
             const buf = new flatbuffers.ByteBuffer(uint8Buffer);
             const model = Model.getRootAsModel(buf);
             const subGraph = model.subgraphs(0);
-            const operatorArray: string[] = [];
+            const operatorArray: string[] = Array.from(
+              {
+                length: model?.operatorCodesLength() || 0,
+              },
+              (v, i) => {
+                const opCode = model.operatorCodes(i);
+                return BuiltinOperator[opCode?.builtinCode().valueOf() as BuiltinOperator];
+              },
+            );
 
-            for (let i = 0; i < model?.operatorCodesLength(); i++) {
-              const opCode = model.operatorCodes(i);
-              operatorArray[i] = BuiltinOperator[opCode?.builtinCode().valueOf()];
-            }
+            const inputNodes = Array.prototype.slice
+              .call(subGraph?.inputsArray())
+              ?.reduce((acc, cur) => {
+                const inputTensor = subGraph?.tensors(cur);
+                if (_.isNil(inputTensor)) return;
 
-            for (let i = 0; i < subGraph?.inputsLength(); i++) {
-              const input = subGraph?.inputs(i);
-              const inputTensor = subGraph?.tensors(input);
-              console.log(
-                "Input Node of index",
-                i,
-                "with title: ",
-                `${inputTensor?.name()} ${input}`,
-              );
-            }
+                acc = acc.concat({
+                  id: `${inputTensor?.name()}`,
+                  name: `${inputTensor?.name()}`,
+                  type: "input",
+                  data: {
+                    label: `${inputTensor?.name()}`,
+                    index: `${inputTensor?.type()}`,
+                  },
+                  position: {
+                    x: 0,
+                    y: 0,
+                  },
+                });
+                return acc;
+              }, [] as ValueInfoProto[]);
 
             const outputTensorMap = new Map<number, number[]>();
-            for (let i = 0; i < subGraph?.outputsLength(); i++) {
-              const output = subGraph?.outputs(i);
-              const outputTensor = subGraph?.tensors(output);
-              console.log(
-                "Output Node of index",
-                i,
-                "with title: ",
-                `${outputTensor?.name()} ${output}`,
-              );
 
-              if (outputTensorMap.has(output)) {
-                outputTensorMap.set(output, outputTensorMap.get(output).concat(i));
-              } else {
-                outputTensorMap.set(output, [i]);
-              }
-            }
+            const outputNodes = Array.prototype.slice
+              .call(subGraph?.outputsArray())
+              ?.reduce((acc, cur, i) => {
+                const outputTensor = subGraph?.tensors(cur);
+                if (_.isNil(outputTensor)) return;
 
-            for (let i = 0; i < subGraph?.operatorsLength(); i++) {
-              const operator = subGraph?.operators(i);
-              console.log(
-                "Node of index ",
-                i,
-                " with title ",
-                operatorArray[operator?.opcodeIndex()],
-              );
-              for (let j = 0; j < operator?.inputsLength(); j++) {
-                const input = operator?.inputs(j);
-                if (tensorOperatorInput.has(input)) {
-                  tensorOperatorInput.set(input, tensorOperatorInput.get(input)?.concat([i]));
+                if (outputTensorMap.has(cur)) {
+                  outputTensorMap.set(cur, (outputTensorMap.get(cur) as number[]).concat(i));
                 } else {
-                  tensorOperatorInput.set(input, [i]);
+                  outputTensorMap.set(cur, [i]);
                 }
-              }
-            }
 
-            for (let i = 0; i < subGraph?.operatorsLength(); i++) {
-              const operator = subGraph?.operators(i);
-              for (let j = 0; j < operator?.outputsLength(); j++) {
-                const output = operator?.outputs(j);
-                if (tensorOperatorInput.has(output)) {
-                  const tensorAsInputList = tensorOperatorInput.get(output);
-                  for (let k = 0; k < tensorAsInputList?.length; k++) {
-                    console.log("Edge from node index", i, "to", tensorAsInputList[k]);
+                acc = acc.concat({
+                  id: `${outputTensor?.name()}`,
+                  name: `${outputTensor?.name()}`,
+                  type: "output",
+                  data: {
+                    label: `${outputTensor?.name()}`,
+                    index: `${outputTensor?.type()}`,
+                  },
+                  position: {
+                    x: 0,
+                    y: 0,
+                  },
+                });
+                return acc;
+              }, [] as ValueInfoProto[]);
+
+            Array.from(
+              {
+                length: subGraph?.operatorsLength() || 0,
+              },
+              (v, i) => {
+                const operator = subGraph?.operators(i);
+
+                if (_.isNil(operator)) return;
+
+                Array.prototype.slice.call(operator?.inputsArray())?.forEach((input) => {
+                  if (tensorOperatorInput.has(input)) {
+                    tensorOperatorInput.set(
+                      input,
+                      (tensorOperatorInput.get(input) as number[]).concat([i]),
+                    );
+                  } else {
+                    tensorOperatorInput.set(input, [i]);
                   }
-                }
+                });
+              },
+            );
 
-                if (outputTensorMap.has(output)) {
-                  const outputInputList = outputTensorMap.get(output);
-                  for (let k = 0; k < outputInputList?.length; k++) {
-                    console.log("Edge from node index", i, "to output index", outputInputList[k]);
-                  }
-                }
-              }
-            }
+            const middleEdges = Array.from(
+              {
+                length: subGraph?.operatorsLength() || 0,
+              },
+              (v, i) => {
+                const operator = subGraph?.operators(i);
 
-            // Create edges for inputs
-            for (let i = 0; i < subGraph?.inputsLength(); i++) {
-              const input = subGraph?.inputs(i);
-              if (tensorOperatorInput.has(input)) {
-                const tensorAsInputList = tensorOperatorInput.get(input);
-                for (let k = 0; k < tensorAsInputList?.length; k++) {
-                  console.log("Edge from input node index", i, "to", tensorAsInputList[k]);
+                return Array.prototype.slice
+                  .call(operator?.outputsArray())
+                  ?.reduce((acc, output) => {
+                    if (tensorOperatorInput.has(output)) {
+                      const tensorAsInputList = tensorOperatorInput.get(output);
+                      const edge = tensorAsInputList?.map((input) => ({
+                        id: `reactflow__edge-${i}-${input}`,
+                        source: i,
+                        target: input,
+                      }));
+                      acc = acc.concat(edge);
+                    }
+                    if (outputTensorMap.has(output)) {
+                      const outputInputList = outputTensorMap.get(output);
+                      const edge = outputInputList?.map((output) => ({
+                        id: `reactflow__edge-${i}-${output}`,
+                        source: i,
+                        target: output,
+                      }));
+                      acc = acc.concat(edge);
+                    }
+                    return acc;
+                  }, []);
+              },
+            )?.flat();
+
+            const inputEdges = Array.prototype.slice
+              .call(subGraph?.inputsArray())
+              ?.reduce((acc, input, i) => {
+                if (tensorOperatorInput.has(input)) {
+                  const tensorAsInputList = tensorOperatorInput.get(input);
+
+                  if (tensorAsInputList === undefined) return;
+
+                  const sourceInputNode = inputNodes.find((node) => Number(node.data.index) === i);
+                  const edge = tensorAsInputList.map((input) => ({
+                    id: `reactflow__edge-${sourceInputNode.id}-${input}`,
+                    source: sourceInputNode,
+                    target: input,
+                  }));
+                  acc = acc.concat(edge);
                 }
-              }
-            }
+                return acc;
+              }, [])
+              .flat();
+
+            const outputEdges = outputNodes.map((node) => {
+              const edge = middleEdges?.find((edge) => Number(node.data.index) === edge.target);
+              return {
+                ...edge,
+                target: node,
+              };
+            });
+
+            const middleNodes: NodeProto[] = Array.from(
+              { length: subGraph?.operatorsLength() || 0 },
+              (v, i) => {
+                const operator = subGraph?.operators(i);
+
+                const inputEdges = middleEdges.filter((edge) => edge?.target === i);
+                const outputEdges = middleEdges.filter((edge) => edge?.source === i);
+                return {
+                  attribute: [],
+                  input: inputEdges,
+                  id: i,
+                  name:
+                    operator?.opcodeIndex() !== undefined
+                      ? `${operatorArray[operator?.opcodeIndex()]}_${i}`
+                      : "",
+                  opType:
+                    operator?.opcodeIndex() !== undefined
+                      ? operatorArray[operator?.opcodeIndex()]
+                      : "",
+                  output: outputEdges,
+                  data: {
+                    label:
+                      operator?.opcodeIndex() !== undefined
+                        ? `${operatorArray[operator?.opcodeIndex()]}_${i}`
+                        : "",
+                  },
+                };
+              },
+            );
+
+            const parsedNodes = middleNodes.map((node) => ({
+              id: node.name,
+              name: node.name,
+              type: node.opType,
+              data: {
+                label: node.name,
+                index: node.id,
+              },
+              position: {
+                x: 0,
+                y: 0,
+              },
+            }));
+
+            console.log(outputNodes, outputEdges);
+
+            const parsedInputEdges = inputEdges.map((edge) => {
+              const targetNodeId = parsedNodes.find(
+                (node) => Number(node.data.index) === edge.target,
+              )?.id;
+              return {
+                id: `reactflow__edge-${edge.source.id}-${targetNodeId}`,
+                source: edge.source.id,
+                target: targetNodeId,
+              };
+            });
+
+            console.log(parsedInputEdges);
+            const parsedOutputEdges = outputEdges.map((edge) => {
+              const sourceNodeId = parsedNodes.find(
+                (node) => Number(node.data.index) === edge.source,
+              )?.id;
+              return {
+                id: `reactflow__edge-${sourceNodeId}-${edge.target.id}`,
+                source: sourceNodeId,
+                target: edge.target.id,
+              };
+            });
+
+            console.log(parsedOutputEdges);
+
+            const parsedEdges = middleEdges.map((edge) => {
+              const sourceNodeId = parsedNodes.find((node) => node.data.index === edge.source)?.id;
+              const targetNodeId = parsedNodes.find((node) => node.data.index === edge.target)?.id;
+              return {
+                id: `reactflow__edge-${sourceNodeId}-${targetNodeId}`,
+                source: sourceNodeId,
+                target: targetNodeId,
+              };
+            });
+
+            const uniqueEdges = [
+              ...new Set(
+                [...parsedInputEdges, ...parsedEdges, ...parsedOutputEdges].map((item) => item),
+              ),
+            ];
+
+            setModelType(AcceptedFileExt.TFLITE);
+            setModelData({
+              graph: {
+                node: [...inputNodes, ...parsedNodes, ...outputNodes],
+                edge: uniqueEdges,
+              },
+            });
           };
           reader.readAsArrayBuffer(file);
         }
@@ -164,7 +333,7 @@ function FileDropZone({ setModelData }: Props) {
   return (
     <Dropzone
       accept={{
-        "application/wasm": [".onnx", ".tflite"],
+        "application/wasm": [AcceptedFileExt.ONNX, AcceptedFileExt.TFLITE],
       }}
       onDrop={onDrop}
     >

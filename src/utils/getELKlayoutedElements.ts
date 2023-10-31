@@ -23,6 +23,8 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
     edges,
   };
 
+  console.log(graph);
+
   return elk
     .layout(graph)
     .then((layoutedGraph) => ({

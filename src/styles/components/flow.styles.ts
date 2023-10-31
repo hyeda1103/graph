@@ -27,7 +27,8 @@ export const FlowWrapper = styled("div")`
   }
 
   .react-flow .react-flow__node-input,
-  .react-flow .react-flow__node-output {
+  .react-flow .react-flow__node-output,
+  .react-flow .react-flow__node-default {
     padding: 0;
     border-radius: 0;
     border: none;
