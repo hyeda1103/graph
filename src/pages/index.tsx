@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import ReactFlow, { MarkerType, Panel, useReactFlow } from "reactflow";
+import ReactFlow, { MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
 import FileDropZone from "@/components/FileDropZone";
@@ -65,7 +65,7 @@ const nodeTypes = {
 };
 
 export default function ReadGraph() {
-  const [rfInstance, setRfInstance] = useState<ReactFlowInstance>(null);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [modelData, setModelData] = useState<ModelProto>();
 
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
@@ -95,28 +95,31 @@ export default function ReadGraph() {
 
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
-      const flow = JSON.parse(localStorage.getItem("flowKey"));
+      const flowKey = localStorage.getItem("flowKey");
+      if (flowKey) {
+        const flow = JSON.parse(flowKey);
 
-      if (flow) {
-        const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || []);
-        setEdges(flow.edges || []);
-        setViewport({ x, y, zoom });
+        if (flow) {
+          const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+          setNodes(flow.nodes || []);
+          setEdges(flow.edges || []);
+          setViewport({ x, y, zoom });
+        }
       }
     };
 
     restoreFlow();
   }, [setNodes, setViewport]);
 
-  const getId = (nodes) => {
+  const getId = (nodes: Node[]) => {
     if (nodes.length === 0) {
       return `${nextNodeType}_0`;
     }
-    const nodesOfType = nodes.filter((node) => node.type === nextNodeType);
+    const nodesOfType = nodes.filter((node: any) => node.type === nextNodeType);
     if (nodesOfType.length === 0) {
       return `${nextNodeType}_0`;
     } else {
-      const nodeIdxOfType = nodesOfType.map((node) =>
+      const nodeIdxOfType = nodesOfType.map((node: any) =>
         Number(node.data.label.split(`${node.type}_`)[1]),
       );
       const nextIdx = Math.max(...nodeIdxOfType) + 1;
@@ -150,9 +153,9 @@ export default function ReadGraph() {
       const ns = useInitialNodes ? initialNodes : nodes;
       const es = useInitialNodes ? initialEdges : edges;
 
-      getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
+      getLayoutedElements(ns, es, opts).then((res: any) => {
+        setNodes(res.nodes);
+        setEdges(res.edges);
 
         window.requestAnimationFrame(() => fitView());
       });

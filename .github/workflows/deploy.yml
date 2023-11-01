@@ -1,0 +1,106 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+      - ci/github-action
+
+jobs:
+  build:
+    name: Build & Push GCP Artifacts
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Setup variables
+        id: setup
+        run: |
+          if [ $GITHUB_REF_NAME == "main" ]
+          then
+            echo "gcp_identity_provider_id=${{secrets.GCP_IDENTITY_PROVIDER_ID_PROD}}" >> $GITHUB_OUTPUT
+            echo "gcp_service_account=${{secrets.GCP_SERVICE_ACCOUNT_PROD}}" >> $GITHUB_OUTPUT
+            echo "gcp_project_id=${{secrets.GCP_PROJECT_ID_PROD}}" >> $GITHUB_OUTPUT
+          else
+            echo "gcp_identity_provider_id=${{secrets.GCP_IDENTITY_PROVIDER_ID_DEV}}" >> $GITHUB_OUTPUT
+            echo "gcp_service_account=${{secrets.GCP_SERVICE_ACCOUNT_DEV}}" >> $GITHUB_OUTPUT
+            echo "gcp_project_id=${{secrets.GCP_PROJECT_ID_DEV}}" >> $GITHUB_OUTPUT
+          fi
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{steps.setup.outputs.gcp_identity_provider_id}}
+          service_account: ${{steps.setup.outputs.gcp_service_account}}
+          access_token_lifetime: 600s
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Build & Push Image
+        id: build-image
+        run: |
+          IMAGE_TAG="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{steps.setup.outputs.gcp_project_id}}/docker/graph-editor:latest"
+          docker build -f ./docker/deploy.Dockerfile -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+
+  deploy:
+    needs: build
+    name: Deploy Service
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Setup variables
+        id: setup
+        run: |
+          if [ $GITHUB_REF_NAME == "main" ]
+          then
+            echo "gcp_identity_provider_id=${{secrets.GCP_IDENTITY_PROVIDER_ID_PROD}}" >> $GITHUB_OUTPUT
+            echo "gcp_service_account=${{secrets.GCP_SERVICE_ACCOUNT_PROD}}" >> $GITHUB_OUTPUT
+            echo "gcp_project_id=${{secrets.GCP_PROJECT_ID_PROD}}" >> $GITHUB_OUTPUT
+          else
+            echo "gcp_identity_provider_id=${{secrets.GCP_IDENTITY_PROVIDER_ID_DEV}}" >> $GITHUB_OUTPUT
+            echo "gcp_service_account=${{secrets.GCP_SERVICE_ACCOUNT_DEV}}" >> $GITHUB_OUTPUT
+            echo "gcp_project_id=${{secrets.GCP_PROJECT_ID_DEV}}" >> $GITHUB_OUTPUT
+          fi
+
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{steps.setup.outputs.gcp_identity_provider_id}}
+          service_account: ${{steps.setup.outputs.gcp_service_account}}
+          access_token_lifetime: 300s
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
+
+      - id: cloud-run-deploy
+        name: Deploy Cloud Run Version
+        uses: 'google-github-actions/deploy-cloudrun@v1'
+        with:
+          region: ${{ secrets.GCP_REGION }}
+          service: graph-editor
+          image: "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{steps.setup.outputs.gcp_project_id}}/docker/graph-editor"

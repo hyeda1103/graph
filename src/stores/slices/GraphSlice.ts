@@ -15,10 +15,10 @@ import { RootState } from "@/stores";
 import * as I from "@/types";
 
 export interface GraphSlice {
-  nodes: I.Node[];
-  edges: I.Edge[];
-  setNodes: (nodes: I.Node[]) => void;
-  setEdges: (edges: I.Edge[]) => void;
+  nodes: any[];
+  edges: any[];
+  setNodes: (nodes: any[]) => void;
+  setEdges: (edges: any[]) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;

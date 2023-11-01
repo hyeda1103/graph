@@ -1,10 +1,11 @@
 import { Dispatch, SetStateAction, useState } from "react";
+import * as flatbuffers from "flatbuffers";
+import { node } from "prop-types";
 import { load, Message } from "protobufjs";
 import Dropzone, { DropEvent, FileRejection } from "react-dropzone";
 
 import { Dashed, Inner } from "@/styles/components/fileDropZone.styles";
 import { AcceptedFileExt, ModelProto } from "@/types";
-import * as flatbuffers from "flatbuffers";
 import { BuiltinOperator, Model } from "@/utils/tflite/tflite";
 
 interface Props {
@@ -72,83 +73,116 @@ function FileDropZone({ setModelData }: Props) {
 
             for (let i = 0; i < model?.operatorCodesLength(); i++) {
               const opCode = model.operatorCodes(i);
-              operatorArray[i] = BuiltinOperator[opCode?.builtinCode().valueOf()];
+              operatorArray[i] = opCode ? BuiltinOperator[opCode.builtinCode().valueOf()] : "";
             }
 
-            for (let i = 0; i < subGraph?.inputsLength(); i++) {
-              const input = subGraph?.inputs(i);
-              const inputTensor = subGraph?.tensors(input);
-              console.log(
-                "Input Node of index",
-                i,
-                "with title: ",
-                `${inputTensor?.name()} ${input}`,
-              );
-            }
-
-            const outputTensorMap = new Map<number, number[]>();
-            for (let i = 0; i < subGraph?.outputsLength(); i++) {
-              const output = subGraph?.outputs(i);
-              const outputTensor = subGraph?.tensors(output);
-              console.log(
-                "Output Node of index",
-                i,
-                "with title: ",
-                `${outputTensor?.name()} ${output}`,
-              );
-
-              if (outputTensorMap.has(output)) {
-                outputTensorMap.set(output, outputTensorMap.get(output).concat(i));
-              } else {
-                outputTensorMap.set(output, [i]);
-              }
-            }
-
-            for (let i = 0; i < subGraph?.operatorsLength(); i++) {
-              const operator = subGraph?.operators(i);
-              console.log(
-                "Node of index ",
-                i,
-                " with title ",
-                operatorArray[operator?.opcodeIndex()],
-              );
-              for (let j = 0; j < operator?.inputsLength(); j++) {
-                const input = operator?.inputs(j);
-                if (tensorOperatorInput.has(input)) {
-                  tensorOperatorInput.set(input, tensorOperatorInput.get(input)?.concat([i]));
-                } else {
-                  tensorOperatorInput.set(input, [i]);
+            if (subGraph) {
+              for (let i = 0; i < subGraph.inputsLength(); i++) {
+                const input = subGraph.inputs(i);
+                if (input) {
+                  const inputTensor = subGraph.tensors(input);
+                  console.log(
+                    "Input Node of index",
+                    i,
+                    "with title: ",
+                    `${inputTensor?.name()} ${input}`,
+                  );
                 }
               }
-            }
 
-            for (let i = 0; i < subGraph?.operatorsLength(); i++) {
-              const operator = subGraph?.operators(i);
-              for (let j = 0; j < operator?.outputsLength(); j++) {
-                const output = operator?.outputs(j);
-                if (tensorOperatorInput.has(output)) {
-                  const tensorAsInputList = tensorOperatorInput.get(output);
-                  for (let k = 0; k < tensorAsInputList?.length; k++) {
-                    console.log("Edge from node index", i, "to", tensorAsInputList[k]);
-                  }
-                }
+              const outputTensorMap = new Map<number, number[]>();
+              for (let i = 0; i < subGraph.outputsLength(); i++) {
+                const output = subGraph.outputs(i);
+                if (output) {
+                  const outputTensor = subGraph.tensors(output);
+                  console.log(
+                    "Output Node of index",
+                    i,
+                    "with title: ",
+                    `${outputTensor?.name()} ${output}`,
+                  );
 
-                if (outputTensorMap.has(output)) {
-                  const outputInputList = outputTensorMap.get(output);
-                  for (let k = 0; k < outputInputList?.length; k++) {
-                    console.log("Edge from node index", i, "to output index", outputInputList[k]);
+                  if (outputTensorMap.has(output)) {
+                    const nodeOutput = outputTensorMap.get(output);
+                    if (nodeOutput) {
+                      outputTensorMap.set(output, nodeOutput.concat(i));
+                    }
+                  } else {
+                    outputTensorMap.set(output, [i]);
                   }
                 }
               }
-            }
 
-            // Create edges for inputs
-            for (let i = 0; i < subGraph?.inputsLength(); i++) {
-              const input = subGraph?.inputs(i);
-              if (tensorOperatorInput.has(input)) {
-                const tensorAsInputList = tensorOperatorInput.get(input);
-                for (let k = 0; k < tensorAsInputList?.length; k++) {
-                  console.log("Edge from input node index", i, "to", tensorAsInputList[k]);
+              for (let i = 0; i < subGraph?.operatorsLength(); i++) {
+                const operator = subGraph?.operators(i);
+                if (operator) {
+                  console.log(
+                    "Node of index ",
+                    i,
+                    " with title ",
+                    operatorArray[operator?.opcodeIndex()],
+                  );
+                  for (let j = 0; j < operator.inputsLength(); j++) {
+                    const input = operator.inputs(j);
+                    if (input) {
+                      if (tensorOperatorInput.has(input)) {
+                        const nodeInput = tensorOperatorInput.get(input);
+                        if (nodeInput) {
+                          tensorOperatorInput.set(input, nodeInput.concat([i]));
+                        }
+                      } else {
+                        tensorOperatorInput.set(input, [i]);
+                      }
+                    }
+                  }
+                }
+              }
+
+              for (let i = 0; i < subGraph?.operatorsLength(); i++) {
+                const operator = subGraph?.operators(i);
+                if (operator) {
+                  for (let j = 0; j < operator?.outputsLength(); j++) {
+                    const output = operator?.outputs(j);
+                    if (output) {
+                      if (tensorOperatorInput.has(output)) {
+                        const tensorAsInputList = tensorOperatorInput.get(output);
+                        if (tensorAsInputList) {
+                          for (let k = 0; k < tensorAsInputList.length; k++) {
+                            console.log("Edge from node index", i, "to", tensorAsInputList[k]);
+                          }
+                        }
+                      }
+
+                      if (outputTensorMap.has(output)) {
+                        const outputInputList = outputTensorMap.get(output);
+                        if (outputInputList) {
+                          for (let k = 0; k < outputInputList.length; k++) {
+                            console.log(
+                              "Edge from node index",
+                              i,
+                              "to output index",
+                              outputInputList[k],
+                            );
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Create edges for inputs
+              for (let i = 0; i < subGraph.inputsLength(); i++) {
+                const input = subGraph.inputs(i);
+                if (input) {
+                  if (tensorOperatorInput.has(input)) {
+                    const tensorAsInputList = tensorOperatorInput.get(input);
+                    if (tensorAsInputList) {
+                      for (let k = 0; k < tensorAsInputList?.length; k++) {
+                        console.log("Edge from input node index", i, "to", tensorAsInputList[k]);
+                      }
+                    }
+                  }
                 }
               }
             }
