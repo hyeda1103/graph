@@ -6,9 +6,9 @@ import Dropzone, { DropEvent, FileRejection } from "react-dropzone";
 
 import { Dashed, Inner } from "@/styles/components/fileDropZone.styles";
 import { AcceptedFileExt, ModelProto, NodeProto, ValueInfoProto } from "@/types";
-import { BuiltinOperator, Model } from "@/utils/tflite/tflite";
 import parseEdges from "@/utils/parseEdges";
 import parseNodes from "@/utils/parseNodes";
+import { BuiltinOperator, Model } from "@/utils/tflite/tflite";
 
 interface Props {
   setModelType: Dispatch<SetStateAction<AcceptedFileExt | undefined>>;

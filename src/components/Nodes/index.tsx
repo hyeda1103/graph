@@ -1,7 +1,6 @@
-import ShapeNode from "@/components/Nodes/Shape";
+import DefaultNode from "@/components/Nodes/Default";
 import InputNode from "@/components/Nodes/Input";
 import OutputNode from "@/components/Nodes/Output";
-import DefaultNode from "@/components/Nodes/Default";
 
 interface Props {
   nodeType: string;

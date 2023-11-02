@@ -1,18 +1,11 @@
-import {
-  MemoExoticComponent,
-  ReactNode,
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import ReactFlow, { MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
 import FileDropZone from "@/components/FileDropZone";
 import ConcatNode from "@/components/Nodes/Concat";
 import ConvNode from "@/components/Nodes/Conv";
+import DefaultNode from "@/components/Nodes/Default";
 import DequantizeLinearNode from "@/components/Nodes/DequantizeLinear";
 import GatherElementsNode from "@/components/Nodes/GatherElements";
 import GemmNode from "@/components/Nodes/Gemm";
@@ -36,14 +29,10 @@ import {
   SelectWrapper,
   Title,
 } from "@/styles/components/flow.styles";
-import { AcceptedFileExt, Layout, ModelProto, NodeType } from "@/types";
+import { AcceptedFileExt, Layout, NodeType } from "@/types";
 import getLayoutedElements from "@/utils/getELKlayoutedElements";
-import parseEdges from "@/utils/parseEdges";
-import parseNodes from "@/utils/parseNodes";
 
 import "reactflow/dist/style.css";
-import Node from "@/components/Nodes";
-import DefaultNode from "@/components/Nodes/Default";
 
 const elkOptions = {
   "elk.algorithm": "layered",
