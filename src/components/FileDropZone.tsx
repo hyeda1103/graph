@@ -53,7 +53,6 @@ function FileDropZone({ setModelType, setModelData }: Props) {
 
                 const parsedNodes = parseNodes(decodedModel.graph);
                 const parsedEdges = parseEdges(decodedModel.graph);
-                console.log(parsedEdges);
                 setModelType(AcceptedFileExt.ONNX);
                 setModelData({
                   graph: {
@@ -271,8 +270,6 @@ function FileDropZone({ setModelType, setModelData }: Props) {
               },
             }));
 
-            console.log(outputNodes, outputEdges);
-
             const parsedInputEdges = inputEdges.map((edge) => {
               const targetNodeId = parsedNodes.find(
                 (node) => Number(node.data.index) === edge.target,
@@ -284,7 +281,6 @@ function FileDropZone({ setModelType, setModelData }: Props) {
               };
             });
 
-            console.log(parsedInputEdges);
             const parsedOutputEdges = outputEdges.map((edge) => {
               const sourceNodeId = parsedNodes.find(
                 (node) => Number(node.data.index) === edge.source,
@@ -295,8 +291,6 @@ function FileDropZone({ setModelType, setModelData }: Props) {
                 target: edge.target.id,
               };
             });
-
-            console.log(parsedOutputEdges);
 
             const parsedEdges = middleEdges.map((edge) => {
               const sourceNodeId = parsedNodes.find((node) => node.data.index === edge.source)?.id;

@@ -164,7 +164,6 @@ export default function ReadGraph() {
     ({ direction, useInitialNodes = false }) => {
       const opts = { "elk.direction": direction, ...elkOptions };
 
-      console.log(modelData);
       const initialEdges = modelData ? modelData.graph.edge : [];
       const initialNodes = modelData ? modelData.graph.node : [];
 
