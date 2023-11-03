@@ -3,7 +3,9 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   Connection,
+  Edge,
   EdgeChange,
+  Node,
   NodeChange,
   OnConnect,
   OnEdgesChange,
@@ -12,13 +14,12 @@ import {
 import { StateCreator } from "zustand";
 
 import { RootState } from "@/stores";
-import * as I from "@/types";
 
-export interface GraphSlice {
-  nodes: I.Node[];
-  edges: I.Edge[];
-  setNodes: (nodes: I.Node[]) => void;
-  setEdges: (edges: I.Edge[]) => void;
+export interface GraphSliceState {
+  nodes: Node[];
+  edges: Edge[];
+  setNodes: (nodes: Node[]) => void;
+  setEdges: (edges: Edge[]) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -27,16 +28,16 @@ export const createGraphSlice: StateCreator<
   RootState,
   [["zustand/persist", unknown], ["zustand/devtools", never]],
   [],
-  GraphSlice
+  GraphSliceState
 > = (set, get) => ({
   nodes: [],
   edges: [],
-  setNodes: (nodes: I.Node[]) => {
+  setNodes: (nodes: Node[]) => {
     set({
       nodes,
     });
   },
-  setEdges: (edges: I.Edge[]) => {
+  setEdges: (edges: Edge[]) => {
     set({
       edges,
     });

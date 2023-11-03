@@ -1,3 +1,5 @@
+import { Edge as ReactFlowEdge, Node as ReactFlowNode } from "reactflow";
+
 export enum NodeType {
   INPUT = "input",
   OUTPUT = "output",
@@ -98,4 +100,11 @@ export enum Layout {
 export enum AcceptedFileExt {
   TFLITE = ".tflite",
   ONNX = ".onnx",
+}
+
+export interface CustomGraphProto {
+  graph: {
+    node: ReactFlowNode[];
+    edge: ReactFlowEdge[];
+  };
 }

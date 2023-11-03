@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
-import { createGraphSlice, GraphSlice } from "@/stores/slices/GraphSlice";
+import { createGraphSlice, GraphSliceState } from "@/stores/slices/GraphSlice";
 
-export type RootState = GraphSlice;
+export type RootState = GraphSliceState;
 
 const useBoundStore = create<RootState>()(
   persist(

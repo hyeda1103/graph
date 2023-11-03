@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import ReactFlow, { MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
+import ReactFlow, { Edge, MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
 import FileDropZone from "@/components/FileDropZone";
@@ -16,7 +16,7 @@ import QuantizeLinearNode from "@/components/Nodes/QuantizeLinear";
 import ReluNode from "@/components/Nodes/Relu";
 import ReshapeNode from "@/components/Nodes/Reshape";
 import ShapeNode from "@/components/Nodes/Shape";
-import useBoundStore from "@/stores";
+import useBoundStore, { RootState } from "@/stores";
 import {
   BasicButton,
   ButtonWrapper,
@@ -29,7 +29,7 @@ import {
   SelectWrapper,
   Title,
 } from "@/styles/components/flow.styles";
-import { AcceptedFileExt, Layout, NodeType } from "@/types";
+import { AcceptedFileExt, CustomGraphProto, Layout, NodeType } from "@/types";
 import getLayoutedElements from "@/utils/getELKlayoutedElements";
 
 import "reactflow/dist/style.css";
@@ -68,20 +68,15 @@ export default function ReadGraph() {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance>(null);
 
   const [modelType, setModelType] = useState<AcceptedFileExt>();
-  const [modelData, setModelData] = useState<{
-    graph: {
-      node: any[];
-      edge: any[];
-    };
-  }>();
+  const [modelData, setModelData] = useState<CustomGraphProto>();
 
-  const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
-    (state) => [
+  const [nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange, onConnect] = useBoundStore(
+    (state: RootState) => [
       state.nodes,
-      state.setNodes,
-      state.onNodesChange,
       state.edges,
+      state.setNodes,
       state.setEdges,
+      state.onNodesChange,
       state.onEdgesChange,
       state.onConnect,
     ],
@@ -107,14 +102,14 @@ export default function ReadGraph() {
 
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes(flow.nodes || []);
-        setEdges(flow.edges || []);
+        setNodes((flow.nodes || []) as Node[]);
+        setEdges((flow.edges || []) as Edge[]);
         setViewport({ x, y, zoom });
       }
     };
 
     restoreFlow();
-  }, [setNodes, setViewport]);
+  }, [setNodes, setEdges, setViewport]);
 
   const getId = (nodes) => {
     if (nodes.length === 0) {

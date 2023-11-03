@@ -1,18 +1,18 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import * as flatbuffers from "flatbuffers";
 import _ from "lodash";
-import { load, Message } from "protobufjs";
+import { load } from "protobufjs";
 import Dropzone, { DropEvent, FileRejection } from "react-dropzone";
 
 import { Dashed, Inner } from "@/styles/components/fileDropZone.styles";
-import { AcceptedFileExt, ModelProto, NodeProto, ValueInfoProto } from "@/types";
+import { AcceptedFileExt, NodeProto, ValueInfoProto } from "@/types";
 import parseEdges from "@/utils/parseEdges";
 import parseNodes from "@/utils/parseNodes";
 import { BuiltinOperator, Model } from "@/utils/tflite/tflite";
 
 interface Props {
   setModelType: Dispatch<SetStateAction<AcceptedFileExt | undefined>>;
-  setModelData: Dispatch<SetStateAction<ModelProto | Message<object> | undefined>>;
+  setModelData: any;
 }
 
 function FileDropZone({ setModelType, setModelData }: Props) {
