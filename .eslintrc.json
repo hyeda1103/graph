@@ -25,7 +25,9 @@
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "react/prop-types": "off",
-    "import/no-named-as-default": "off"
+    "import/no-named-as-default": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "warn"
   },
   "overrides": [
     {

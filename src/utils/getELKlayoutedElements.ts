@@ -1,12 +1,13 @@
-import ELK from "elkjs/lib/elk.bundled";
+import ELK, { ElkNode } from "elkjs/lib/elk.bundled";
 
 import { nodeHeight, nodeWidth } from "@/constants";
+import { Edge } from "@/types";
 
 const elk = new ELK();
 
-const getLayoutedElements = (nodes, edges, options = {}) => {
+const getLayoutedElements = (nodes: any[], edges: any[], options = {}) => {
   const isHorizontal = options?.["elk.direction"] === "RIGHT";
-  const graph = {
+  const graph: ElkNode = {
     id: "root",
     layoutOptions: options,
     children: nodes.map((node) => ({
