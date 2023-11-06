@@ -12,7 +12,6 @@ interface Props {
 }
 
 function ReluNode({ data, isConnectable }: Props) {
-  console.log(data);
   return (
     <Box>
       <Name nodeType={I.NodeType.RELU}>{I.NodeType.RELU}</Name>
