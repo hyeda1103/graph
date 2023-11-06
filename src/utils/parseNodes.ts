@@ -27,7 +27,6 @@ function parseNodes(graph: GraphProto) {
 
           label += `${valueString} \n`;
         } else {
-          console.log(inputName);
           // Else, load the dimension data of the initializer and print it
           const dimensionString = value.dims.join("x");
           label += `<${dimensionString}> \n`;
@@ -40,7 +39,7 @@ function parseNodes(graph: GraphProto) {
       name: node.name,
       type: node.opType,
       data: {
-        label: label,
+        label: label || node.opType,
       },
       position: {
         x: 0,
