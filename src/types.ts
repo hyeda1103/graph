@@ -88,9 +88,16 @@ export interface OperatorSetIdProto {
   version: number;
 }
 
+export interface TensorProto {
+  dataType: number;
+  name: string;
+  rawData: number[];
+  dims: number[];
+}
+
 export interface GraphProto {
   docString: string;
-  initializer: string[];
+  initializer: TensorProto[];
   input: ValueInfoProto[];
   node: NodeProto[];
   output: ValueInfoProto[];
