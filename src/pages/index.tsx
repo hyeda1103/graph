@@ -180,9 +180,6 @@ export default function ReadGraph() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onInit={setRfInstance}
-          onSelect={(e) => {
-            console.log(`onSelect`, e);
-          }}
           fitView
         >
           <Panel position="top-left">
