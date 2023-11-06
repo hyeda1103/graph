@@ -66,7 +66,7 @@ const nodeTypes = {
 
 export default function ReadGraph() {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const [modelData, setModelData] = useState();
+  const [modelData, setModelData] = useState<any>();
 
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [

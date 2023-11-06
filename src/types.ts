@@ -19,7 +19,7 @@ export interface Edge {
   id: string;
   source: string;
   target: string;
-  label: string;
+  label?: string;
 }
 
 export interface Node {
@@ -46,11 +46,11 @@ export interface Dimension {
 }
 
 export interface TensorShapeProto {
-  dim: Dimension[]
+  dim: Dimension[];
 }
 export interface Tensor {
   elemType: number;
-  shape: TensorShapeProto
+  shape: TensorShapeProto;
 }
 
 export interface TypeProto {

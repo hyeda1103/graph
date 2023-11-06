@@ -1,5 +1,5 @@
 import * as I from "@/types";
-import {Dimension} from "@/types";
+import { Dimension, Edge } from "@/types";
 
 function parseEdges(graph: I.ModelProto["graph"]) {
   const nodes = graph.node;
@@ -8,12 +8,12 @@ function parseEdges(graph: I.ModelProto["graph"]) {
   const valueInfo = graph.valueInfo;
   const valueInfoMap = new Map<string, I.ValueInfoProto>();
   valueInfo.forEach((value, _) => {
-    valueInfoMap.set(value.name, value)
-  })
+    valueInfoMap.set(value.name, value);
+  });
 
   const edges = nodes.reduce((acc, cur) => {
     if (cur.input) {
-      const newEdges = Array.from({
+      const newEdges: Edge[] = Array.from({
         length: cur.input.length,
       }).map((_, idx) => ({
         id: (cur.input as string[])[idx],
@@ -27,7 +27,7 @@ function parseEdges(graph: I.ModelProto["graph"]) {
 
   const middleEdges = edges.reduce((acc, cur) => {
     const node = nodes.find((node) => node.output?.includes(cur.id));
-    const edgeValueInfo = valueInfoMap.get(cur.id)
+    const edgeValueInfo = valueInfoMap.get(cur.id);
     if (node) {
       acc = acc.concat({
         ...cur,
@@ -63,20 +63,20 @@ function parseEdges(graph: I.ModelProto["graph"]) {
   return [...inputEdges, ...middleEdges, ...outputEdges];
 }
 
-function generateEdgeLabel(valueInfo: I.ValueInfoProto) : string {
+function generateEdgeLabel(valueInfo: I.ValueInfoProto): string {
   const dim = valueInfo.type.tensorType.shape?.dim;
-  if(dim) {
+  if (dim) {
     const dimensionValueArray = dim.map((dimension, _) => {
-      if(dimension.dimParam) {
-        return dimension.dimParam
+      if (dimension.dimParam) {
+        return dimension.dimParam;
       }
-      if(dimension.dimValue) {
-        return dimension.dimValue.toString()
+      if (dimension.dimValue) {
+        return dimension.dimValue.toString();
       }
 
-      return "?"
-    })
-    return dimensionValueArray.join(" x ")
+      return "?";
+    });
+    return dimensionValueArray.join(" x ");
   }
 
   return "";
