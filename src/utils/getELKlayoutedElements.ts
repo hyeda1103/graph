@@ -1,7 +1,6 @@
 import ELK, { ElkNode } from "elkjs/lib/elk.bundled";
 
 import { nodeHeight, nodeWidth } from "@/constants";
-import { Edge } from "@/types";
 
 const elk = new ELK();
 
@@ -23,8 +22,6 @@ const getLayoutedElements = (nodes: any[], edges: any[], options = {}) => {
     })),
     edges,
   };
-
-  console.log(graph);
 
   return elk
     .layout(graph)

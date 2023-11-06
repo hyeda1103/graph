@@ -21,6 +21,7 @@ export interface Edge {
   id: string;
   source: string;
   target: string;
+  label?: string;
 }
 
 export interface Node {
@@ -41,11 +42,26 @@ export interface Node {
   };
 }
 
+export interface Dimension {
+  dimValue?: number;
+  dimParam?: string;
+}
+
+export interface TensorShapeProto {
+  dim: Dimension[];
+}
+export interface Tensor {
+  elemType: number;
+  shape: TensorShapeProto;
+}
+
+export interface TypeProto {
+  tensorType: Tensor;
+}
+
 export interface ValueInfoProto {
   name: string;
-  type: {
-    tensorType: string;
-  };
+  type: TypeProto;
 }
 
 export interface AttributeProto {
@@ -74,12 +90,20 @@ export interface OperatorSetIdProto {
   version: number;
 }
 
+export interface TensorProto {
+  dataType: number;
+  name: string;
+  rawData: number[];
+  dims: number[];
+}
+
 export interface GraphProto {
-  docString?: string;
-  initializer?: string[];
+  docString: string;
+  initializer: TensorProto[];
   input: ValueInfoProto[];
   node: NodeProto[];
   output: ValueInfoProto[];
+  valueInfo: ValueInfoProto[];
 }
 
 export interface ModelProto {

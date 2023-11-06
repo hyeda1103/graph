@@ -11,10 +11,10 @@ interface Props {
   isConnectable: boolean;
 }
 
-function ShapeNode({ data, isConnectable }: Props) {
+function ShapeNode({ isConnectable }: Props) {
   return (
     <Box>
-      <Name nodeType={I.NodeType.SHAPE}>{data.label}</Name>
+      <Name nodeType={I.NodeType.SHAPE}>{I.NodeType.SHAPE}</Name>
       <Handle
         type="target"
         position={Position.Top}

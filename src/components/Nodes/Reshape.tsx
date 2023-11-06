@@ -11,10 +11,10 @@ interface Props {
   isConnectable: boolean;
 }
 
-function ReshapeNode({ data, isConnectable }: Props) {
+function ReshapeNode({ isConnectable }: Props) {
   return (
     <Box>
-      <Name nodeType={I.NodeType.RESHAPE}>{data.label}</Name>
+      <Name nodeType={I.NodeType.RESHAPE}>{I.NodeType.RESHAPE}</Name>
       <Handle
         type="target"
         position={Position.Top}

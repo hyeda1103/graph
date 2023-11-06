@@ -14,7 +14,7 @@ interface Props {
 function GatherElementsNode({ data, isConnectable }: Props) {
   return (
     <Box>
-      <Name nodeType={I.NodeType.QUANTIZE_LINEAR}>{data.label}</Name>
+      <Name nodeType={I.NodeType.QUANTIZE_LINEAR}>{I.NodeType.QUANTIZE_LINEAR}</Name>
       <Handle
         type="target"
         position={Position.Top}

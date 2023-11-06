@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import ReactFlow, { Edge, MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
+import ReactFlow, { MarkerType, Panel, ReactFlowInstance, useReactFlow } from "reactflow";
 import { shallow } from "zustand/shallow";
 
 import FileDropZone from "@/components/FileDropZone";
@@ -102,8 +102,8 @@ export default function ReadGraph() {
 
       if (flow) {
         const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-        setNodes((flow.nodes || []) as Node[]);
-        setEdges((flow.edges || []) as Edge[]);
+        setNodes(flow.nodes || []);
+        setEdges(flow.edges || []);
         setViewport({ x, y, zoom });
       }
     };
@@ -154,9 +154,9 @@ export default function ReadGraph() {
       const ns = useInitialNodes ? initialNodes : nodes;
       const es = useInitialNodes ? initialEdges : edges;
 
-      getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
+      getLayoutedElements(ns, es, opts).then((res: any) => {
+        setNodes(res.nodes);
+        setEdges(res.edges);
 
         window.requestAnimationFrame(() => fitView());
       });
@@ -185,7 +185,7 @@ export default function ReadGraph() {
           }}
           fitView
         >
-          <Panel position="top-right">
+          <Panel position="top-left">
             <Inner>
               <LayoutOptionWrapper>
                 <Title>Save and Restore</Title>

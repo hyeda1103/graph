@@ -11,10 +11,10 @@ interface Props {
   isConnectable: boolean;
 }
 
-function MaxPoolNode({ data, isConnectable }: Props) {
+function MaxPoolNode({ isConnectable }: Props) {
   return (
     <Box>
-      <Name nodeType={I.NodeType.MAX_POOL}>{data.label}</Name>
+      <Name nodeType={I.NodeType.MAX_POOL}>{I.NodeType.MAX_POOL}</Name>
       <Handle
         type="target"
         position={Position.Top}

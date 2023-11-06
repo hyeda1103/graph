@@ -12,9 +12,10 @@ interface Props {
 }
 
 function ReluNode({ data, isConnectable }: Props) {
+  console.log(data);
   return (
     <Box>
-      <Name nodeType={I.NodeType.RELU}>{data.label}</Name>
+      <Name nodeType={I.NodeType.RELU}>{I.NodeType.RELU}</Name>
       <Handle
         type="target"
         position={Position.Top}
