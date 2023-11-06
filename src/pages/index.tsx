@@ -66,7 +66,7 @@ const nodeTypes = {
 
 export default function ReadGraph() {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const [modelData, setModelData] = useState<ModelProto>();
+  const [modelData, setModelData] = useState();
 
   const [nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, onConnect] = useBoundStore(
     (state) => [
@@ -167,6 +167,7 @@ export default function ReadGraph() {
   useLayoutEffect(() => {
     onLayout({ direction: "DOWN", useInitialNodes: true });
   }, [modelData]);
+
   return (
     <>
       <FlowWrapper ref={flowWrapperRef}>
@@ -181,7 +182,7 @@ export default function ReadGraph() {
           onInit={setRfInstance}
           fitView
         >
-          <Panel position="top-right">
+          <Panel position="top-left">
             <Inner>
               <LayoutOptionWrapper>
                 <Title>Save and Restore</Title>
